@@ -8,7 +8,8 @@ const int gridRows = 5, gridCols = 7;
 struct Tile {
 	float x, y, z, r, b, g;
 	bool highlighted, occupied;
-	Tile(float x, float y, float z, float r, float g, float b) {
+	Tile::Tile() {}
+	Tile::Tile(float x, float y, float z, float r, float g, float b) {
 		this->x = x;
 		this->y = y;
 		this->z = z;
@@ -27,7 +28,13 @@ struct Tile {
 		glutSolidCube(1);
 		glPopMatrix();
 	}
-};
+}tiles[gridRows][gridCols];
+void drawGrid() {
+	glPushMatrix();
+	glScalef(gridRows, 0.01f, gridCols);
+	glColor3f(0, 0, 0);
+	glutSolidCube(1);
+}
 void Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
@@ -42,7 +49,15 @@ void Anim() {
 void key(unsigned char key, int x, int y) {
 	
 }
+void initTiles() {
+	for (int i = 0; i < gridRows; i++) {
+		for (int j = 0; j < gridCols; j++) {
+			tiles[i][j] = Tile(1, 1, 1, 0.2, 0.1, 0.3);
+		}
+	}
+}
 void main(int argc, char** argv) {
+	initTiles();
 	glutInit(&argc, argv);
 
 	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -56,8 +71,9 @@ void main(int argc, char** argv) {
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
-
+	
 	glMatrixMode(GL_PROJECTION);
+
 	glLoadIdentity();
 	gluPerspective(45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 0.01f, 600.0f);
 
