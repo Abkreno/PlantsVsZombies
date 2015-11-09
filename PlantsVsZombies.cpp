@@ -99,6 +99,8 @@ void initTiles() {
 		}
 		currX += 1;
 	}
+	tiles[0][0].occupied = true;
+	tiles[0][0].character = 'd';
 }
 
 void main(int argc, char** argv) {
@@ -119,7 +121,7 @@ void main(int argc, char** argv) {
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
-	
+	glEnable(GL_LIGHT0);
 	glMatrixMode(GL_PROJECTION);
 
 	glLoadIdentity();
