@@ -85,7 +85,7 @@
     <ClCompile Include="PlantsVsZombies.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="tile.h" />
+    <ClInclude Include="graphics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

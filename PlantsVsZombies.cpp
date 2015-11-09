@@ -1,6 +1,6 @@
 #include <glut.h>
 #include <stdio.h>
-#include <tile.h>
+#include <graphics.h>
 
 #define WINDOW_WIDTH  600
 #define WINDOW_HEIGHT 600
@@ -10,7 +10,7 @@ float rotx = 45;
 float roty = 90.001f;
 int lastx = 0;
 int lasty = 0;
-unsigned char Buttons[2] = { 0 };
+unsigned char Buttons[3] = { 0 };
 const int gridRows = 5, gridCols = 9;
 
 Tile tiles[gridRows][gridCols];
@@ -70,6 +70,9 @@ void Mouse(int b, int s, int x, int y)
 		break;
 	case GLUT_MIDDLE_BUTTON:
 		Buttons[1] = ((GLUT_DOWN == s) ? 1 : 0);
+		break;
+	case GLUT_RIGHT_BUTTON:
+		Buttons[2] = ((GLUT_DOWN == s) ? 1 : 0);
 		break;
 	default:
 		break;
