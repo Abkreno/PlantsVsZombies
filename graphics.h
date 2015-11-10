@@ -1,5 +1,7 @@
+bool paused = false;
 struct Defender {
 	float x, y, z, boltZ ,dt;
+	bool ballVanished;
 	Defender::Defender() {}
 	Defender::Defender(float x, float y, float z) {
 		this->x = x;
@@ -7,21 +9,35 @@ struct Defender {
 		this->z = z;
 		this->boltZ = 0;
 		this->dt = 0.0f;
+		this->ballVanished = false;
 	}
-	void draw() {
-		glPushMatrix();
-		glColor3f(1.0f, 1.0f, 1.0f);
-		glTranslatef(0.0f, 1.0f, boltZ);
-		boltZ -= 0.009f;
+
+	void updateBoltZ() {
+		boltZ += 0.009f;
 		dt += 0.5f;
 		if (dt >= 1000.0f) {
 			dt = 0.0f;
 			boltZ = 0.0f;
+			ballVanished = false;
 		}
-		gluSphere(gluNewQuadric(), 0.1f, 30, 30);
+	}
+	void drawBolt() {
+		glPushMatrix();
+		glColor3f(0.1f, 0.01f, 0.5f);
+		glTranslatef(0.0f, 1.0f, boltZ);
+		if(!paused)
+			updateBoltZ();
+		if (!ballVanished)
+			gluSphere(gluNewQuadric(), 0.1f, 30, 30);
+		glPopMatrix();
+	}
+	void draw() {
+		glPushMatrix();
+		drawBolt();
 		glPopMatrix();
 	}
 };
+
 struct ResourceGatherer {
 	float x, y, z,rotAng,dt;
 	ResourceGatherer::ResourceGatherer() {}
@@ -32,10 +48,7 @@ struct ResourceGatherer {
 		this->rotAng = 0.0f;
 		this->dt = 0.0f;
 	}
-	void draw() {
-		glPushMatrix();
-		glRotatef(rotAng, 0.0f, 1.0f, 0.0f);
-		
+	void updateRotateAng() {
 		if (dt >= 1.0f) {
 			dt = 0.0f;
 			rotAng += 10.0f;
@@ -43,8 +56,14 @@ struct ResourceGatherer {
 		else {
 			dt += 0.01f;
 		}
+	}
+	void draw() {
 		glPushMatrix();
-		glColor3f(0.2f, 0.2f, 0.2f);
+		glRotatef(rotAng, 0.0f, 1.0f, 0.0f);
+		if (!paused)
+			updateRotateAng();
+		glPushMatrix();
+		glColor3f(0.1f, 0.01f, 0.5f);
 		glRotatef(-90, 1.0f, 0.0f, 0.0f);
 		gluCylinder(gluNewQuadric(), 0.1f, 0.1f, 1.3f, 11, 11);
 		glPopMatrix();
@@ -52,8 +71,8 @@ struct ResourceGatherer {
 		glPushMatrix();
 		glTranslatef(0.0f, 1.5f, 0.0f);
 		glScalef(0.2f, 0.2f, 0.2f);
-		glColor3f(0.2f, 0.2f, 0.2f);
-		glutSolidDodecahedron();
+		glColor3f(0.1f, 0.01f, 0.5f);
+		glutSolidIcosahedron();
 		glPopMatrix();
 		
 		glPopMatrix();
@@ -64,7 +83,7 @@ struct Tile {
 	bool highlighted, occupied;
 	char character;
 	Defender defender;
-	ResourceGatherer resource_gatherer;
+	ResourceGatherer resourceG;
 	Tile::Tile() {}
 	Tile::Tile(float x, float y, float z, float r, float g, float b) {
 		this->x = x;
@@ -77,14 +96,14 @@ struct Tile {
 		this->occupied = false;
 		this->character = '0';
 		this->defender = Defender(x,y,z);
-		this->resource_gatherer = ResourceGatherer(x, y, z);
+		this->resourceG = ResourceGatherer(x, y, z);
 	}
 	void drawCharacter() {
 		if (character == 'd' || character == 'D') {
 			defender.draw();
 		}
 		else if (character == 'r' || character == 'R') {
-			resource_gatherer.draw();
+			resourceG.draw();
 		}
 	}
 	void draw() {
