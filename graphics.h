@@ -1,6 +1,9 @@
+const int MAXMONSTERS = 10;
+const int gridRows = 5, gridCols = 9;
 bool paused = false;
+
 struct Defender {
-	float x, y, z, boltZ ,dt;
+	float x, y, z, dz ,dt;
 	bool ballVanished;
 	bool enemyExists;
 	Defender::Defender() {}
@@ -8,31 +11,31 @@ struct Defender {
 		this->x = x;
 		this->y = y;
 		this->z = z;
-		this->boltZ = 1000;
+		this->dz = 1000;
 		this->dt = 1000;
 		this->ballVanished = false;
 		this->enemyExists = false;
 	}
 
 	void updateBoltZ() {
-		boltZ += boltZ<2000 ?0.029:0;
-		dt += dt<2000 ?0.5:0.0;
+		dz += dz<2000 ?0.029:0;
+		dt += dt<2000 ?1.0:0.0;
 		if (dt >= 1000.0f && enemyExists) {
 			dt = 0.0f;
-			boltZ = 0.0f;
+			dz = 0.0f;
 			ballVanished = false;
 		}
 	}
 	void stopAttack() {
 		enemyExists = false;
 	}
-	void attack() {
+	void startAttack() {
 		enemyExists = true;
 	}
 	void drawBolt() {
 		glPushMatrix();
 		glColor3f(0.13f, 0.13f, 0.13f);
-		glTranslatef(0.0f, 1.0f, boltZ);
+		glTranslatef(0.0f, 1.0f, dz);
 		glScalef(0.2, 0.2, 0.6);
 		if(!paused)
 			updateBoltZ();
@@ -109,9 +112,10 @@ struct ResourceGatherer {
 		glPopMatrix();
 	}
 };
+
 struct Tile {
 	float x, y, z, r, b, g;
-	bool highlighted, occupied,hasEnemy;
+	bool highlighted, occupied;
 	char character;
 	Defender defender;
 	ResourceGatherer resourceG;
@@ -125,7 +129,6 @@ struct Tile {
 		this->b = b;
 		this->highlighted = false;
 		this->occupied = false;
-		this->hasEnemy = false;
 		this->character = '0';
 		this->defender = Defender(x,y,z);
 		this->resourceG = ResourceGatherer(x, y, z);
@@ -155,4 +158,80 @@ struct Tile {
 		glutSolidCube(1);
 		glPopMatrix();
 	}
+}tiles[gridRows][gridCols];
+struct Monster {
+	float x, y, z,r,g,alpha,b,dz,dt;
+	bool isDead;
+	Monster::Monster() {}
+	Monster::Monster(float x, float y, float z,float r,float g,float b) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->dt = 0;
+		this->dz = 0;
+		this->alpha = 1;
+		this->isDead = true;
+	}
+	void start() {
+		isDead = false;
+		dz = 0;
+		dt = 0;
+		alpha = 1;
+	}
+	void update() {
+		dz-= 0.0001;
+		if (alpha <= 0)
+			isDead = true;
+	}
+	void decreaseHP() {
+		alpha -= 0.3;
+	}
+	void draw() {
+		glPushMatrix();
+		if(!paused)
+			update();
+		glColor4f(r, g, b,alpha);
+		glTranslatef(x, y+1, z+dz);
+		glScalef(0.5, 0.5, 0.5);
+		glutSolidCube(1);
+		glPopMatrix();
+	}
 };
+struct MonsterFactory {
+	bool hasEnemy;
+	float x, y, z;
+	int numOfMonsters;
+	Monster monsters[MAXMONSTERS];
+	MonsterFactory::MonsterFactory(){}
+	MonsterFactory::MonsterFactory(float x,float y,float z){
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->hasEnemy = false;
+		this->numOfMonsters = 0;
+		for (int i = 0; i < MAXMONSTERS; i++) {
+			monsters[i] = Monster(x, y, z, 0.3, 0.3, 0.03);
+		}
+		addMonster();
+	}
+	void addMonster() {
+		for (int i = 0; i < MAXMONSTERS; i++) {
+			if (monsters[i].isDead) {
+				monsters[i].start();
+				return;
+			}
+		}
+	}
+	void drawMonsters() {
+		glPushMatrix();
+		for (int i = 0; i < MAXMONSTERS; i++)
+			if(!monsters[i].isDead)
+				monsters[i].draw();
+		glPopMatrix();
+	}
+}monsterFactories[gridRows];
+
+

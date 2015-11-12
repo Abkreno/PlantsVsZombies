@@ -12,9 +12,8 @@ float rotz = 0;
 int lastx = 0;
 int lasty = 0;
 unsigned char Buttons[3] = { 0 };
-const int gridRows = 5, gridCols = 9;
+
 bool view = false;
-Tile tiles[gridRows][gridCols];
 
 void drawHouse() {
 	//Roof
@@ -38,10 +37,13 @@ void drawGrid() {
 	
 	glPushMatrix();
 	for (int i = 0; i < gridRows; i++) {
+		
 		for (int j = 0; j < gridCols; j++) {
+			monsterFactories[i].drawMonsters();
 			tiles[i][j].draw();
-			if (tiles[i][0].hasEnemy) {
-				tiles[i][j].defender.attack();
+			
+			if (monsterFactories[i].hasEnemy) {
+				tiles[i][j].defender.startAttack();
 			}
 			else {
 				tiles[i][j].defender.stopAttack();
@@ -117,7 +119,7 @@ void Anim() {
 }
 
 void key(unsigned char key, int x, int y) {
-	if (key == 'f')tiles[0][0].hasEnemy = !tiles[0][0].hasEnemy;
+	if (key == 'f')monsterFactories[0].hasEnemy = !monsterFactories[0].hasEnemy;
 	if (key == 'p' || key == 'P') {
 		paused = !paused;
 	}
@@ -158,6 +160,7 @@ void initTiles() {
 	float currX =-2, currZ;
 	for (int i = 0; i < gridRows; i++) {
 		currZ = 4;
+		monsterFactories[i] = MonsterFactory(currX, 0, currZ+1);
 		for (int j = 0; j < gridCols; j++) {
 			if(j%2==i%2)
 				tiles[i][j] = Tile(currX, 0 , currZ, 0.01, 1, 0.01);
@@ -168,8 +171,9 @@ void initTiles() {
 		tiles[i][7].occupied = true;
 		tiles[i][7].character = 'd';
 		currX += 1;
+		
 	}
-	tiles[0][0].hasEnemy = true;
+	monsterFactories[0].hasEnemy = true;
 	
 }
 void light() {
@@ -178,6 +182,7 @@ void light() {
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
 	glShadeModel(GL_SMOOTH);
+	
 }
 void main(int argc, char** argv) {
 	
@@ -198,7 +203,9 @@ void main(int argc, char** argv) {
 
 	glEnable(GL_DEPTH_TEST);
 	light();
-	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 0.01f, 100.0f);
