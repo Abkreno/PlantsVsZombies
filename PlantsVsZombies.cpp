@@ -5,8 +5,8 @@
 #define WINDOW_WIDTH  600
 #define WINDOW_HEIGHT 600
 
-float zoom = 16.0f;
-float rotx = 45;
+float zoom = 20.0f;
+float rotx = 30;
 float roty = 90.001f;
 float rotz = 0;
 int lastx = 0;
@@ -37,15 +37,21 @@ void drawHouse() {
 void drawGrid() {
 	
 	glPushMatrix();
-	
 	for (int i = 0; i < gridRows; i++) {
 		for (int j = 0; j < gridCols; j++) {
 			tiles[i][j].draw();
+			if (tiles[i][0].hasEnemy) {
+				tiles[i][j].defender.attack();
+			}
+			else {
+				tiles[i][j].defender.stopAttack();
+			}
 		}
 	}
 	
-	glColor3f(0.3, 0.3, 0.6);
-	glScalef(gridRows, 0.01f, gridCols);
+	glColor3f(0.01, 0.5, 0.01);
+	glTranslatef(0, -1.1, 0);
+	glScalef(gridRows, 1.0f, gridCols);
 	glutSolidCube(2);
 	glPopMatrix();
 }
@@ -111,15 +117,22 @@ void Anim() {
 }
 
 void key(unsigned char key, int x, int y) {
+	if (key == 'f')tiles[0][0].hasEnemy = !tiles[0][0].hasEnemy;
 	if (key == 'p' || key == 'P') {
 		paused = !paused;
 	}
-	
+	if (paused) {
+		return;
+	}
 	if (key == 'v') {
 		view = !view;
 		if (view) {
 			rotx = 45;
 			roty = 180;
+		}
+		else {
+			rotx = 30;
+			roty = 90;
 		}
 		
 	}
@@ -129,13 +142,15 @@ void key(unsigned char key, int x, int y) {
 	if (key=='=')
 	{
 		// Zoom in
-		zoom -= 0.3f;
+		if(zoom>1)
+			zoom -= 0.3f;
+
 	}
-	
 	if(key=='-')
 	{
 		// Zoom out
-		zoom += 0.3f;
+		if(zoom<22)
+			zoom += 0.3f;
 	}
 }
 
@@ -144,13 +159,17 @@ void initTiles() {
 	for (int i = 0; i < gridRows; i++) {
 		currZ = 4;
 		for (int j = 0; j < gridCols; j++) {
-			tiles[i][j] = Tile(currX, 0 , currZ, 0.0, 0.0, 0.0);
+			if(j%2==i%2)
+				tiles[i][j] = Tile(currX, 0 , currZ, 0.01, 1, 0.01);
+			else
+				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.3f);
 			currZ -= 1;
 		}
 		tiles[i][7].occupied = true;
-		tiles[i][7].character = 'r';
+		tiles[i][7].character = 'd';
 		currX += 1;
 	}
+	tiles[0][0].hasEnemy = true;
 	
 }
 void light() {
@@ -182,7 +201,7 @@ void main(int argc, char** argv) {
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 0.01f, 300.0f);
+	gluPerspective(45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 0.01f, 100.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 
