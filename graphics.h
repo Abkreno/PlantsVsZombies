@@ -287,8 +287,18 @@ void detectMonstersIntersections() {
 		for (int j = 0; j < MAXMONSTERS; j++) {
 			if (monsterFactories[i].monsters[j].isDead)
 				continue;
+			monsterFactories[i].monsters[j].stop = false;
 			for (int k = 0; k < gridCols; k++) {
-
+				if (tiles[i][k].occupied&&intersects(tiles[i][k].z+0.5, 
+					monsterFactories[i].monsters[j].z+monsterFactories[i].monsters[j].dz)) {
+					monsterFactories[i].monsters[j].stop = true;
+					monsterFactories[i].monsters[j].dt++;
+					if (monsterFactories[i].monsters[j].dt >= 3000) {
+						tiles[i][k].decreaseHP();
+						monsterFactories[i].monsters[j].dt = 0;
+					}
+					break;
+				}
 			}
 		}
 	}

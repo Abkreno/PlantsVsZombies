@@ -69,6 +69,7 @@ void Display(void) {
 	glRotatef(rotz, 0, 0, 1);
 
 	detectBoltIntersections();
+	detectMonstersIntersections();
 	drawHouse();
 	drawGrid();
 	glFlush();
