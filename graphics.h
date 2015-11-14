@@ -58,11 +58,11 @@ struct Defender {
 		glRotatef(90, 1, 0, 0);
 		gluCylinder(gluNewQuadric(), 1, 1, 2, 30, 30);
 	}
-	void draw() {
+	void draw(float alpha) {
 		glPushMatrix();
 		glPushMatrix();
 		drawBolt();
-		glColor3f(0.7, 0.1, 0.1);
+		glColor4f(0.7, 0.1, 0.1,alpha);
 		drawGun();
 		glPopMatrix();
 		glPushMatrix();
@@ -91,13 +91,13 @@ struct ResourceGatherer {
 			dt += 0.01f;
 		}
 	}
-	void draw() {
+	void draw(float alpha) {
 		glPushMatrix();
 		glRotatef(rotAng, 0.0f, 1.0f, 0.0f);
 		if (!paused)
 			updateRotateAng();
 		glPushMatrix();
-		glColor3f(0.1f, 0.01f, 0.5f);
+		glColor4f(0.1f, 0.01f, 0.5f,alpha);
 		glRotatef(-90, 1.0f, 0.0f, 0.0f);
 		gluCylinder(gluNewQuadric(), 0.1f, 0.1f, 1.3f, 11, 11);
 		glPopMatrix();
@@ -105,7 +105,7 @@ struct ResourceGatherer {
 		glPushMatrix();
 		glTranslatef(0.0f, 1.5f, 0.0f);
 		glScalef(0.2f, 0.2f, 0.2f);
-		glColor3f(0.1f, 0.01f, 0.5f);
+		glColor4f(0.1f, 0.01f, 0.5f, alpha);
 		glutSolidIcosahedron();
 		glPopMatrix();
 		
@@ -114,7 +114,7 @@ struct ResourceGatherer {
 };
 
 struct Tile {
-	float x, y, z, r, b, g;
+	float x, y, z, r, b, g,characterHP;
 	bool highlighted, occupied;
 	char character;
 	Defender defender;
@@ -130,15 +130,31 @@ struct Tile {
 		this->highlighted = false;
 		this->occupied = false;
 		this->character = '0';
+		this->characterHP = 0;
 		this->defender = Defender(x,y,z);
 		this->resourceG = ResourceGatherer(x, y, z);
 	}
+	void addCharacter(char c) {
+		character = c;
+		characterHP = 1;
+		occupied = true;
+	}
+	void destroyCharacter() {
+		character = '0';
+		occupied = false;
+		characterHP = 0;
+	}
+	void decreaseHP() {
+		characterHP -= 0.2;
+		if (characterHP < 0)
+			destroyCharacter();
+	}
 	void drawCharacter() {
 		if (character == 'd' || character == 'D') {
-			defender.draw();
+			defender.draw(characterHP);
 		}
 		else if (character == 'r' || character == 'R') {
-			resourceG.draw();
+			resourceG.draw(characterHP);
 		}
 	}
 	void draw() {
@@ -161,7 +177,7 @@ struct Tile {
 }tiles[gridRows][gridCols];
 struct Monster {
 	float x, y, z,r,g,alpha,b,dz,dt;
-	bool isDead;
+	bool isDead,stop;
 	Monster::Monster() {}
 	Monster::Monster(float x, float y, float z,float r,float g,float b) {
 		this->x = x;
@@ -174,6 +190,7 @@ struct Monster {
 		this->dz = 0;
 		this->alpha = 1;
 		this->isDead = true;
+		this->stop = false;
 	}
 	void start() {
 		isDead = false;
@@ -183,15 +200,15 @@ struct Monster {
 	}
 	void update() {
 		dz-= 0.0001;
-		if (alpha <= 0)
-			isDead = true;
 	}
 	void decreaseHP() {
 		alpha -= 0.3;
+		if (alpha <= 0)
+			isDead = true;
 	}
 	void draw() {
 		glPushMatrix();
-		if(!paused)
+		if(!paused&&!stop)
 			update();
 		glColor4f(r, g, b,alpha);
 		glTranslatef(x, y+1, z+dz);
@@ -201,7 +218,7 @@ struct Monster {
 	}
 };
 struct MonsterFactory {
-	bool hasEnemy;
+	bool hasMonster;
 	float x, y, z;
 	int numOfMonsters;
 	Monster monsters[MAXMONSTERS];
@@ -210,17 +227,17 @@ struct MonsterFactory {
 		this->x = x;
 		this->y = y;
 		this->z = z;
-		this->hasEnemy = false;
+		this->hasMonster = false;
 		this->numOfMonsters = 0;
 		for (int i = 0; i < MAXMONSTERS; i++) {
 			monsters[i] = Monster(x, y, z, 0.3, 0.3, 0.03);
 		}
-		addMonster();
 	}
 	void addMonster() {
 		for (int i = 0; i < MAXMONSTERS; i++) {
 			if (monsters[i].isDead) {
 				monsters[i].start();
+				hasMonster = true;
 				return;
 			}
 		}
@@ -233,5 +250,47 @@ struct MonsterFactory {
 		glPopMatrix();
 	}
 }monsterFactories[gridRows];
+float eps = 1e-9;
+bool intersects(float z1, float z2) {
+	if (fabs(z1 - z2) <= 0.2)
+		return true;
+	return false;
+}
+void detectBoltIntersections() {
+	for (int i = 0; i < gridRows; i++) {
+		for (int j = 0; j < gridCols; j++) {
+			if (tiles[i][j].character == 'd') {
+				if (tiles[i][j].defender.enemyExists && !tiles[i][j].defender.ballVanished) {
+					for (int k = 0; k < MAXMONSTERS; k++)
+					{
+						if (monsterFactories[i].monsters[k].isDead)
+							continue;
+						if (intersects(monsterFactories[i].monsters[k].z + monsterFactories[i].monsters[k].dz,
+							tiles[i][j].defender.z + tiles[i][j].defender.dz)) {
+							tiles[i][j].defender.ballVanished = true;
+							monsterFactories[i].monsters[k].decreaseHP();
+							break;
+						}
+					}
+				}
+			}
+		}
+		monsterFactories[i].hasMonster = false;
+		for (int k = 0; k < MAXMONSTERS; k++)
+		{
+			monsterFactories[i].hasMonster |= !monsterFactories[i].monsters[k].isDead;
+		}
+	}
+}
+void detectMonstersIntersections() {
+	for (int i = 0; i < gridRows; i++) {
+		for (int j = 0; j < MAXMONSTERS; j++) {
+			if (monsterFactories[i].monsters[j].isDead)
+				continue;
+			for (int k = 0; k < gridCols; k++) {
 
+			}
+		}
+	}
+}
 

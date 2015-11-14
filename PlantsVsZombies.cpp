@@ -1,10 +1,10 @@
 #include <glut.h>
 #include <stdio.h>
+#include <math.h>
 #include <graphics.h>
 
 #define WINDOW_WIDTH  600
 #define WINDOW_HEIGHT 600
-
 float zoom = 20.0f;
 float rotx = 30;
 float roty = 90.001f;
@@ -42,7 +42,7 @@ void drawGrid() {
 			monsterFactories[i].drawMonsters();
 			tiles[i][j].draw();
 			
-			if (monsterFactories[i].hasEnemy) {
+			if (monsterFactories[i].hasMonster) {
 				tiles[i][j].defender.startAttack();
 			}
 			else {
@@ -67,7 +67,8 @@ void Display(void) {
 	glRotatef(rotx, 1, 0, 0);
 	glRotatef(roty, 0, 1, 0);
 	glRotatef(rotz, 0, 0, 1);
-	
+
+	detectBoltIntersections();
 	drawHouse();
 	drawGrid();
 	glFlush();
@@ -119,7 +120,7 @@ void Anim() {
 }
 
 void key(unsigned char key, int x, int y) {
-	if (key == 'f')monsterFactories[0].hasEnemy = !monsterFactories[0].hasEnemy;
+	if (key == 'f')monsterFactories[0].addMonster();
 	if (key == 'p' || key == 'P') {
 		paused = !paused;
 	}
@@ -168,13 +169,9 @@ void initTiles() {
 				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.3f);
 			currZ -= 1;
 		}
-		tiles[i][7].occupied = true;
-		tiles[i][7].character = 'd';
-		currX += 1;
-		
+		tiles[i][7].addCharacter('d');
+		currX += 1;	
 	}
-	monsterFactories[0].hasEnemy = true;
-	
 }
 void light() {
 	glEnable(GL_LIGHTING);
