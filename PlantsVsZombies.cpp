@@ -52,7 +52,7 @@ void drawGrid() {
 	}
 	
 	glColor3f(0.01, 0.5, 0.01);
-	glTranslatef(0, -1.1, 0);
+	glTranslatef(0, -1.02, 0);
 	glScalef(gridRows, 1.0f, gridCols);
 	glutSolidCube(2);
 	glPopMatrix();
@@ -60,7 +60,9 @@ void drawGrid() {
 
 void Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	
 	glLoadIdentity();
 
 	glTranslatef(0, 0, -zoom);
@@ -165,7 +167,7 @@ void initTiles() {
 		monsterFactories[i] = MonsterFactory(currX, 0, currZ+1);
 		for (int j = 0; j < gridCols; j++) {
 			if(j%2==i%2)
-				tiles[i][j] = Tile(currX, 0 , currZ, 0.01, 1, 0.01);
+				tiles[i][j] = Tile(currX, 0 , currZ, 0.01f, 1.0f, 0.01f);
 			else
 				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.3f);
 			currZ -= 1;
@@ -180,7 +182,12 @@ void light() {
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
 	glShadeModel(GL_SMOOTH);
-	
+}
+void timerFunc(int v)     // timer function to update time
+{
+	monsterFactories[0].addMonster();
+	glutPostRedisplay();
+	glutTimerFunc(10000, timerFunc, 0);  //repost timer 
 }
 void main(int argc, char** argv) {
 	
@@ -196,13 +203,15 @@ void main(int argc, char** argv) {
 	glutKeyboardFunc(key);
 	glutMouseFunc(Mouse);
 	glutMotionFunc(Motion);
+	glutTimerFunc(0, timerFunc, 0);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+	
 
 	glEnable(GL_DEPTH_TEST);
 	light();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	
+	glClearColor(1.0f,1.0f,1.0f,0.0f);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
