@@ -86,8 +86,9 @@ void Motion(int x, int y)
 
 void Mouse(int b, int s, int x, int y)
 {
-	if (view||paused)
-		return;
+	if (view || paused) {
+		//return;
+	}
 	lastx = x;
 	lasty = y;
 	switch (b)
@@ -107,11 +108,7 @@ void Mouse(int b, int s, int x, int y)
 	glutPostRedisplay();
 }
 
-void Anim() {
-	glLoadIdentity();
-	gluLookAt(7.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.01f, 0.0f, 1.0f, 0.0f);
-	//glutPostRedisplay();
-}
+
 
 void key(unsigned char key, int x, int y) {
 	if (key == 'f')monsterFactories[0].addMonster();
@@ -141,20 +138,21 @@ void key(unsigned char key, int x, int y) {
 	if (key=='=')
 	{
 		// Zoom in
-		if(zoom>1)
-			zoom -= 0.3f;
-
+		if (zoom<-10)
+			zoom += 0.3f;
+		
 	}
 	if(key=='-')
 	{
 		// Zoom out
-		if(zoom<22)
-			zoom += 0.3f;
+		if (zoom>-20.0f)
+			zoom -= 0.3f;
+
 	}
 }
 
 void initTiles() {
-	float currX =-2, currZ;
+	float currX =-3, currZ;
 	for (int i = 0; i < gridRows; i++) {
 		currZ = 4;
 		monsterFactories[i] = MonsterFactory(currX, 0, currZ+1);
@@ -167,7 +165,7 @@ void initTiles() {
 			currZ -= 1;
 		}
 		tiles[i][7].addCharacter('r');
-		currX += 1;	
+		currX += 1.2;	
 	}
 	
 }
@@ -229,13 +227,18 @@ void light() {
 	glEnable(GL_COLOR_MATERIAL);
 	glShadeModel(GL_SMOOTH);
 }
+void Anim() {
+	glLoadIdentity();
+	gluLookAt(7.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.01f, 0.0f, 1.0f, 0.0f);
+	//glutPostRedisplay();
+}
 void timerFunc(int v)    
 {
 	if (view) {
 		updateView();
 	}
 	glutPostRedisplay();
-	glutTimerFunc(1, timerFunc, 0);
+	glutTimerFunc(30, timerFunc, 0);
 }
 void main(int argc, char** argv) {
 	

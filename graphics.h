@@ -84,12 +84,12 @@ struct ResourceGatherer {
 		this->dt = 0.0f;
 	}
 	void updateRotateAng() {
-		if (dt >= 1.0f) {
+		if (dt >= 2.0f) {
 			dt = 0.0f;
 			rotAng += 10.0f;
 		}
 		else {
-			dt += 0.01f;
+			dt += 1.7f;
 		}
 	}
 	void draw(float alpha) {
@@ -200,21 +200,47 @@ struct Monster {
 		alpha = 1;
 	}
 	void update() {
-		dz-= 0.0001;
+		dz-= 0.0025;
 	}
 	void decreaseHP() {
 		alpha -= 0.3;
 		if (alpha <= 0)
 			isDead = true;
 	}
+	void drawWheel(float x, float z) {
+		glPushMatrix();	
+		
+		glRotatef(90, 0, 1, 0);
+		glScalef(0.15, 0.15, 0.15);
+		glTranslatef(x, -3.0f, z);
+		gluCylinder(gluNewQuadric(), 1, 1, 1, 30, 30);
+		glPopMatrix();
+	}
+
+	void drawCone(float x) {
+		glPushMatrix();
+		glRotatef(180, 0, 1, 0);
+		glScalef(0.15, 0.15, 0.15);
+		glTranslatef(x, 0, 3.3f);
+		glutSolidCone(0.8, 1.8, 30, 30);
+
+		glPopMatrix();
+	}
 	void draw() {
 		glPushMatrix();
 		if(!paused&&!stop)
 			update();
 		glColor4f(r, g, b,alpha);
-		glTranslatef(x, y+1, z+dz);
-		glScalef(0.5, 0.5, 0.5);
+		glTranslatef(x, y+0.6, z+dz);
+		glScalef(1, 1, 1);
 		glutSolidCube(1);
+		drawWheel(1.8, 3.2);
+		drawWheel(-2.0, 3.2);
+		drawWheel(-2.0, -4.2);
+		drawWheel(1.8, -4.2);
+		drawCone(1.6f);
+		drawCone(0);
+		drawCone(-1.6f);
 		glPopMatrix();
 	}
 };
@@ -303,7 +329,7 @@ void detectMonstersIntersections() {
 					monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz)) {
 					monsterFactories[i].monsters[j].stop = true;
 					monsterFactories[i].monsters[j].dt++;
-					if (monsterFactories[i].monsters[j].dt >= 1000) {
+					if (monsterFactories[i].monsters[j].dt >= 40) {
 						tiles[i][k].decreaseHP();
 						monsterFactories[i].monsters[j].dt = 0;
 					}
