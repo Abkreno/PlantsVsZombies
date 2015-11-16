@@ -1,4 +1,5 @@
 const int MAXMONSTERS = 10;
+const float HouseZ = -5.0f;
 const int gridRows = 5, gridCols = 9;
 bool paused = false;
 
@@ -250,7 +251,7 @@ struct MonsterFactory {
 		glPopMatrix();
 	}
 }monsterFactories[gridRows];
-float eps = 1e-9;
+
 bool intersects(float z1, float z2) {
 	if (fabs(z1 - z2) <= 0.2)
 		return true;
@@ -288,9 +289,13 @@ void detectMonstersIntersections() {
 			if (monsterFactories[i].monsters[j].isDead)
 				continue;
 			monsterFactories[i].monsters[j].stop = false;
+			if (intersects(monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz, HouseZ)) {
+				monsterFactories[i].monsters[j].isDead = true;
+				continue;
+			}
 			for (int k = 0; k < gridCols; k++) {
-				if (tiles[i][k].occupied&&intersects(tiles[i][k].z+0.5, 
-					monsterFactories[i].monsters[j].z+monsterFactories[i].monsters[j].dz)) {
+				if (tiles[i][k].occupied&&intersects(tiles[i][k].z + 0.5,
+					monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz)) {
 					monsterFactories[i].monsters[j].stop = true;
 					monsterFactories[i].monsters[j].dt++;
 					if (monsterFactories[i].monsters[j].dt >= 3000) {
@@ -300,6 +305,7 @@ void detectMonstersIntersections() {
 					break;
 				}
 			}
+			
 		}
 	}
 }

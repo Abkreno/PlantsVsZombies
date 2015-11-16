@@ -5,12 +5,22 @@
 
 #define WINDOW_WIDTH  600
 #define WINDOW_HEIGHT 600
-float zoom = 20.0f;
+#define MAX_NUM_OF_VIEWS  3
+float eps = 1;
+float zoom = -20.0f;
 float rotx = 30;
 float roty = 90.001f;
 float rotz = 0;
+float dx = 0.05;
+float dy = 0.05;
+float dzoom = 0.05;
+int xDir = 1;
+int yDir = 1;
+int zoomDir = 1;
+float views[3][MAX_NUM_OF_VIEWS];
 int lastx = 0;
 int lasty = 0;
+int currView = 0;
 unsigned char Buttons[3] = { 0 };
 
 bool view = false;
@@ -65,13 +75,14 @@ void Display(void) {
 	
 	glLoadIdentity();
 
-	glTranslatef(0, 0, -zoom);
+	glTranslatef(0, 0, zoom);
 	glRotatef(rotx, 1, 0, 0);
 	glRotatef(roty, 0, 1, 0);
 	glRotatef(rotz, 0, 0, 1);
-
-	detectBoltIntersections();
-	detectMonstersIntersections();
+	if (!paused) {
+		detectBoltIntersections();
+		detectMonstersIntersections();
+	}
 	drawHouse();
 	drawGrid();
 	glFlush();
@@ -95,7 +106,7 @@ void Motion(int x, int y)
 
 void Mouse(int b, int s, int x, int y)
 {
-	if (view)
+	if (view||paused)
 		return;
 	lastx = x;
 	lasty = y;
@@ -113,13 +124,14 @@ void Mouse(int b, int s, int x, int y)
 	default:
 		break;
 	}
+	printf("%.3f %.3f %.3f\n", rotx, roty, zoom);
 	glutPostRedisplay();
 }
 
 void Anim() {
 	glLoadIdentity();
 	gluLookAt(7.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.01f, 0.0f, 1.0f, 0.0f);
-	glutPostRedisplay();
+	//glutPostRedisplay();
 }
 
 void key(unsigned char key, int x, int y) {
@@ -135,10 +147,12 @@ void key(unsigned char key, int x, int y) {
 		if (view) {
 			rotx = 45;
 			roty = 180;
+			currView = 0;
 		}
 		else {
 			rotx = 30;
 			roty = 90;
+			zoom = -20.0f;
 		}
 		
 	}
@@ -172,8 +186,61 @@ void initTiles() {
 				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.3f);
 			currZ -= 1;
 		}
-		tiles[i][7].addCharacter('d');
+		tiles[i][7].addCharacter('r');
 		currX += 1;	
+	}
+}
+
+void addView(int index, float rX, float rY, float Z) {
+	if (index > MAX_NUM_OF_VIEWS)
+		return;
+	views[0][index] = rX;
+	views[1][index] = rY;
+	views[2][index] = Z;
+}
+
+void initViews() {
+	addView(0, 19, 37, -20);
+	addView(1, 20, 155, -20);
+	addView(2, 0, 195, -20);
+}
+int compare(float a, float b) {
+	if (fabs(a - b) < 1.0)
+		return 0;
+	if (a > b)
+		return 1;
+	return -1;
+}
+void updateView() {
+	bool done = true;
+	if ((xDir>0&&rotx < views[0][currView])|| (xDir<0 && rotx > views[0][currView])) {
+		if (xDir > 0)
+			rotx += dx;
+		else
+			rotx -= dx;
+		done = false;
+	}
+	if ((yDir>0&&roty < views[1][currView])|| (yDir<0 && roty > views[1][currView])) {
+		if (yDir > 0)
+			roty += dy;
+		else
+			roty -= dy;
+		done = false;
+	}
+	if ((zoomDir>0&&zoom < views[2][currView])|| (zoomDir<0 && zoom > views[2][currView])) {
+		if (zoomDir > 0)
+			zoom += dzoom;
+		else
+			zoom -= dzoom;
+		done = false;
+	}
+	if (done) {
+		currView = (currView + 1) % MAX_NUM_OF_VIEWS;
+		xDir = compare(views[0][currView] , rotx);
+		yDir = compare(views[1][currView],  roty);
+		zoomDir = compare(views[2][currView], zoom);
+		//printf("%.3f %.3f %.3f\n", dx, dy, dzoom);
+		printf("%d\n",currView);
 	}
 }
 void light() {
@@ -183,15 +250,18 @@ void light() {
 	glEnable(GL_COLOR_MATERIAL);
 	glShadeModel(GL_SMOOTH);
 }
-void timerFunc(int v)     // timer function to update time
+void timerFunc(int v)    
 {
-	monsterFactories[0].addMonster();
+	if (view) {
+		updateView();
+	}
 	glutPostRedisplay();
-	glutTimerFunc(10000, timerFunc, 0);  //repost timer 
+	glutTimerFunc(1, timerFunc, 0);
 }
 void main(int argc, char** argv) {
 	
 	initTiles();
+	initViews();
 	glutInit(&argc, argv);
 
 	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
