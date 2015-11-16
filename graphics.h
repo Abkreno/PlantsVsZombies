@@ -98,7 +98,7 @@ struct ResourceGatherer {
 		if (!paused)
 			updateRotateAng();
 		glPushMatrix();
-		glColor4f(0.1f, 0.01f, 0.5f,alpha);
+		glColor4f(0.7, 0.1, 0.1,alpha);
 		glRotatef(-90, 1.0f, 0.0f, 0.0f);
 		gluCylinder(gluNewQuadric(), 0.1f, 0.1f, 1.3f, 11, 11);
 		glPopMatrix();
@@ -106,7 +106,7 @@ struct ResourceGatherer {
 		glPushMatrix();
 		glTranslatef(0.0f, 1.5f, 0.0f);
 		glScalef(0.2f, 0.2f, 0.2f);
-		glColor4f(0.1f, 0.01f, 0.5f, alpha);
+		glColor4f(0.7, 0.1, 0.1, alpha);
 		glutSolidIcosahedron();
 		glPopMatrix();
 		
@@ -146,7 +146,7 @@ struct Tile {
 		characterHP = 0;
 	}
 	void decreaseHP() {
-		characterHP -= 0.2;
+		characterHP -= 0.5;
 		if (characterHP < 0)
 			destroyCharacter();
 	}
@@ -165,10 +165,10 @@ struct Tile {
 			drawCharacter();
 		}
 		if (highlighted) {
-			glColor3f(0.3, 0.3, 0.3);
+			glColor4f(r, g, b,0.5);
 		}
 		else {
-			glColor3f(r, g, b);
+			glColor4f(r, g, b,1.0);
 		}
 
 		glScalef(0.9, 0.05f, 0.9);
@@ -231,7 +231,7 @@ struct MonsterFactory {
 		this->hasMonster = false;
 		this->numOfMonsters = 0;
 		for (int i = 0; i < MAXMONSTERS; i++) {
-			monsters[i] = Monster(x, y, z, 0.3, 0.3, 0.03);
+			monsters[i] = Monster(x, y, z, 0.7, 0.1, 0.1);
 		}
 	}
 	void addMonster() {
@@ -259,6 +259,8 @@ bool intersects(float z1, float z2) {
 }
 void detectBoltIntersections() {
 	for (int i = 0; i < gridRows; i++) {
+		if (laneDestroyed[i])
+			continue;
 		for (int j = 0; j < gridCols; j++) {
 			if (tiles[i][j].character == 'd') {
 				if (tiles[i][j].defender.enemyExists && !tiles[i][j].defender.ballVanished) {
@@ -285,20 +287,23 @@ void detectBoltIntersections() {
 }
 void detectMonstersIntersections() {
 	for (int i = 0; i < gridRows; i++) {
+		if (laneDestroyed[i])
+			continue;
 		for (int j = 0; j < MAXMONSTERS; j++) {
 			if (monsterFactories[i].monsters[j].isDead)
 				continue;
 			monsterFactories[i].monsters[j].stop = false;
 			if (intersects(monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz, HouseZ)) {
 				monsterFactories[i].monsters[j].isDead = true;
-				continue;
+				laneDestroyed[i] = true;
+				break;
 			}
 			for (int k = 0; k < gridCols; k++) {
 				if (tiles[i][k].occupied&&intersects(tiles[i][k].z + 0.5,
 					monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz)) {
 					monsterFactories[i].monsters[j].stop = true;
 					monsterFactories[i].monsters[j].dt++;
-					if (monsterFactories[i].monsters[j].dt >= 3000) {
+					if (monsterFactories[i].monsters[j].dt >= 1000) {
 						tiles[i][k].decreaseHP();
 						monsterFactories[i].monsters[j].dt = 0;
 					}
