@@ -2,7 +2,7 @@ const int MAXMONSTERS = 10;
 const float HouseZ = -5.0f;
 const int gridRows = 5, gridCols = 9;
 bool paused = false;
-
+bool laneDestroyed[gridRows];
 struct Defender {
 	float x, y, z, dz ,dt;
 	bool ballVanished;

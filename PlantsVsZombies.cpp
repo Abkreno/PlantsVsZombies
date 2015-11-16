@@ -47,7 +47,8 @@ void drawGrid() {
 	
 	glPushMatrix();
 	for (int i = 0; i < gridRows; i++) {
-		
+		if (laneDestroyed[i])
+			continue;
 		for (int j = 0; j < gridCols; j++) {
 			monsterFactories[i].drawMonsters();
 			tiles[i][j].draw();
@@ -124,7 +125,6 @@ void Mouse(int b, int s, int x, int y)
 	default:
 		break;
 	}
-	printf("%.3f %.3f %.3f\n", rotx, roty, zoom);
 	glutPostRedisplay();
 }
 
@@ -179,6 +179,7 @@ void initTiles() {
 	for (int i = 0; i < gridRows; i++) {
 		currZ = 4;
 		monsterFactories[i] = MonsterFactory(currX, 0, currZ+1);
+		laneDestroyed[i] = false;
 		for (int j = 0; j < gridCols; j++) {
 			if(j%2==i%2)
 				tiles[i][j] = Tile(currX, 0 , currZ, 0.01f, 1.0f, 0.01f);
@@ -189,6 +190,7 @@ void initTiles() {
 		tiles[i][7].addCharacter('r');
 		currX += 1;	
 	}
+	
 }
 
 void addView(int index, float rX, float rY, float Z) {
@@ -200,9 +202,9 @@ void addView(int index, float rX, float rY, float Z) {
 }
 
 void initViews() {
-	addView(0, 19, 37, -20);
-	addView(1, 20, 155, -20);
-	addView(2, 0, 195, -20);
+	addView(0, 20, 0, -20);
+	addView(1, 10, 90, -20);
+	addView(2, 0, 180, -20);
 }
 int compare(float a, float b) {
 	if (fabs(a - b) < 1.0)
@@ -239,8 +241,6 @@ void updateView() {
 		xDir = compare(views[0][currView] , rotx);
 		yDir = compare(views[1][currView],  roty);
 		zoomDir = compare(views[2][currView], zoom);
-		//printf("%.3f %.3f %.3f\n", dx, dy, dzoom);
-		printf("%d\n",currView);
 	}
 }
 void light() {
