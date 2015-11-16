@@ -50,9 +50,6 @@ void drawGrid() {
 
 void Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-	
 	glLoadIdentity();
 
 	glTranslatef(0, 0, zoom);
@@ -81,13 +78,12 @@ void Motion(int x, int y)
 		rotx += (float) 0.5f * diffy;
 		roty += (float) 0.5f * diffx;
 	}
-	glutPostRedisplay();
 }
 
 void Mouse(int b, int s, int x, int y)
 {
 	if (view || paused) {
-		//return;
+		return;
 	}
 	lastx = x;
 	lasty = y;
@@ -105,7 +101,6 @@ void Mouse(int b, int s, int x, int y)
 	default:
 		break;
 	}
-	glutPostRedisplay();
 }
 
 
@@ -161,10 +156,10 @@ void initTiles() {
 			if(j%2==i%2)
 				tiles[i][j] = Tile(currX, 0 , currZ, 0.01f, 1.0f, 0.01f);
 			else
-				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.3f);
+				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.7f);
 			currZ -= 1;
 		}
-		tiles[i][7].addCharacter('r');
+		tiles[i][7].addCharacter('d');
 		currX += 1.2;	
 	}
 	
@@ -234,6 +229,7 @@ void Anim() {
 }
 void timerFunc(int v)    
 {
+
 	if (view) {
 		updateView();
 	}
@@ -261,7 +257,8 @@ void main(int argc, char** argv) {
 
 	glEnable(GL_DEPTH_TEST);
 	light();
-
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 	
 	glClearColor(1.0f,1.0f,1.0f,0.0f);
 

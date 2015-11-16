@@ -4,7 +4,8 @@ const int gridRows = 5, gridCols = 9;
 bool paused = false;
 bool laneDestroyed[gridRows];
 struct Defender {
-	float x, y, z, dz ,dt;
+	float x, y, z, dz;
+	int dt;
 	bool ballVanished;
 	bool enemyExists;
 	Defender::Defender() {}
@@ -12,17 +13,17 @@ struct Defender {
 		this->x = x;
 		this->y = y;
 		this->z = z;
-		this->dz = 1000;
-		this->dt = 1000;
+		this->dz = 300;
+		this->dt = 0;
 		this->ballVanished = false;
 		this->enemyExists = false;
 	}
 
 	void updateBoltZ() {
-		dz += dz<2000 ?0.029:0;
-		dt += dt<2000 ?1.0:0.0;
-		if (dt >= 1000.0f && enemyExists) {
-			dt = 0.0f;
+		dz += dz<=200 ?0.2:0;
+		dt += dt<=500?10:0;
+		if (dt > 500 && enemyExists) {
+			dt = 0;
 			dz = 0.0f;
 			ballVanished = false;
 		}
@@ -34,12 +35,12 @@ struct Defender {
 		enemyExists = true;
 	}
 	void drawBolt() {
+		if (!paused)
+			updateBoltZ();
 		glPushMatrix();
 		glColor3f(0.13f, 0.13f, 0.13f);
 		glTranslatef(0.0f, 1.0f, dz);
 		glScalef(0.2, 0.2, 0.6);
-		if(!paused)
-			updateBoltZ();
 		if (!ballVanished)
 			gluSphere(gluNewQuadric(), 0.3f, 30, 30);
 		glPopMatrix();
@@ -59,11 +60,11 @@ struct Defender {
 		glRotatef(90, 1, 0, 0);
 		gluCylinder(gluNewQuadric(), 1, 1, 2, 30, 30);
 	}
-	void draw(float alpha) {
+	void draw(float HP) {
 		glPushMatrix();
 		glPushMatrix();
 		drawBolt();
-		glColor4f(0.7, 0.1, 0.1,alpha);
+		glColor3f(0.7+HP, 0.1+HP, 0.1+HP);
 		drawGun();
 		glPopMatrix();
 		glPushMatrix();
@@ -137,17 +138,17 @@ struct Tile {
 	}
 	void addCharacter(char c) {
 		character = c;
-		characterHP = 1;
+		characterHP = 0;
 		occupied = true;
 	}
 	void destroyCharacter() {
 		character = '0';
 		occupied = false;
-		characterHP = 0;
+		characterHP = 1;
 	}
 	void decreaseHP() {
-		characterHP -= 0.5;
-		if (characterHP < 0)
+		characterHP += 0.1;
+		if (characterHP > 0.3)
 			destroyCharacter();
 	}
 	void drawCharacter() {
@@ -177,7 +178,7 @@ struct Tile {
 	}
 }tiles[gridRows][gridCols];
 struct Monster {
-	float x, y, z,r,g,alpha,b,dz,dt;
+	float x, y, z,r,g,HP,b,dz,dt;
 	bool isDead,stop;
 	Monster::Monster() {}
 	Monster::Monster(float x, float y, float z,float r,float g,float b) {
@@ -189,7 +190,7 @@ struct Monster {
 		this->b = b;
 		this->dt = 0;
 		this->dz = 0;
-		this->alpha = 1;
+		this->HP = 1;
 		this->isDead = true;
 		this->stop = false;
 	}
@@ -197,14 +198,14 @@ struct Monster {
 		isDead = false;
 		dz = 0;
 		dt = 0;
-		alpha = 1;
+		HP = 0;
 	}
 	void update() {
 		dz-= 0.0025;
 	}
 	void decreaseHP() {
-		alpha -= 0.3;
-		if (alpha <= 0)
+		HP += 0.1;
+		if (HP >= 0.3)
 			isDead = true;
 	}
 	void drawWheel(float x, float z) {
@@ -230,7 +231,7 @@ struct Monster {
 		glPushMatrix();
 		if(!paused&&!stop)
 			update();
-		glColor4f(r, g, b,alpha);
+		glColor3f(r+HP, g+HP, b+HP);
 		glTranslatef(x, y+0.6, z+dz);
 		glScalef(1, 1, 1);
 		glutSolidCube(1);
