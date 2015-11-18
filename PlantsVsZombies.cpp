@@ -25,6 +25,7 @@ void drawHouse() {
 void drawGrid() {
 	
 	glPushMatrix();
+	glTranslatef(0.6, 0, 0);
 	for (int i = 0; i < gridRows; i++) {
 		if (laneDestroyed[i])
 			continue;
@@ -41,10 +42,7 @@ void drawGrid() {
 		}
 	}
 	
-	glColor3f(0.01, 0.5, 0.01);
-	glTranslatef(0, -1.02, 0);
-	glScalef(gridRows, 1.0f, gridCols);
-	glutSolidCube(2);
+
 	glPopMatrix();
 }
 
@@ -62,6 +60,10 @@ void Display(void) {
 	}
 	drawHouse();
 	drawGrid();
+	glColor3f(0.01, 0.5, 0.01);
+	glTranslatef(0, -1.02, 0);
+	glScalef(gridRows, 1.0f, gridCols);
+	glutSolidCube(2);
 	glFlush();
 }
 
@@ -103,47 +105,87 @@ void Mouse(int b, int s, int x, int y)
 	}
 }
 
-
-
-void key(unsigned char key, int x, int y) {
-	if (key == 'f')monsterFactories[0].addMonster();
-	if (key == 'p' || key == 'P') {
-		paused = !paused;
-	}
-	if (paused) {
-		return;
-	}
-	if (key == 'v') {
-		view = !view;
-		if (view) {
-			rotx = 45;
-			roty = 180;
-			currView = 0;
-		}
-		else {
-			rotx = 30;
-			roty = 90;
-			zoom = -20.0f;
-		}
-		
-	}
+void switchView() {
+	view = !view;
 	if (view) {
+		rotx = 45;
+		roty = 180;
+		currView = 0;
+	}
+	else {
+		rotx = 30;
+		roty = 90;
+		zoom = -20.0f;
+	}
+
+}
+void zoomIn() {
+	// Zoom in
+	if (zoom<0)
+		zoom += 0.3f;
+}
+void zoomOut() {
+	// Zoom out
+	if (zoom>-20.0f)
+		zoom -= 0.3f;
+}
+void handleCharacterInsertion(unsigned char key) {
+	if (key == ESC_KEY){
+		currState = SELECT_ROW;
+		if (selected_row < 5 && selected_row>=0
+			&& selected_col < 9 && selected_col>=0)
+			tiles[selected_row][selected_col].highlighted = false;
 		return;
 	}
+	if (currState == SELECT_ROW) {
+		if (key > '0' && key <= '5') {
+			selected_row = (key - '0') - 1;
+			selected_col = 8;
+			tiles[selected_row][selected_col].highlighted = true;
+			currState = SELECT_COL;
+		}
+	}
+	else if (key >= '0'&&key <= '9') {
+		if (key > '0' && key <= '9') {
+			tiles[selected_row][selected_col].highlighted = false;
+			selected_col = (key - '0') - 1;
+			selected_col = 8 - selected_col;
+			tiles[selected_row][selected_col].highlighted = true;
+		}
+	}
+	else {
+		if (key == 'c') {
+			tiles[selected_row][selected_col].destroyCharacter();
+		}
+		else if (key == 'd'||key=='r'||key=='w') {
+			tiles[selected_row][selected_col].addCharacter(key);
+		}
+		tiles[selected_row][selected_col].highlighted = false;
+		currState = SELECT_ROW;
+	}
+}
+int counterrr = 0;
+void key(unsigned char key, int x, int y) {
+	if (key == 'k') {
+		printf("addView(%d, %0.3f, %0.3f, %0.3f);\n", counterrr++, rotx, roty, zoom);
+	}
+	if (key == 'f')
+		monsterFactories[0].addMonster();
+	if (key == 'p' || key == 'P')
+		paused = !paused;
+	if (paused) 
+		return;
+	if (key >= '0'&&key <= '9' || key == 'r' || key == 'd' 
+		|| key == 'w' || key == 'c' || key == ESC_KEY)
+		handleCharacterInsertion(key);
+	if (key == 'v')
+		switchView();
+	if (view) 
+		return;
 	if (key=='=')
-	{
-		// Zoom in
-		if (zoom<-10)
-			zoom += 0.3f;
-		
-	}
+		zoomIn();
 	if(key=='-')
-	{
-		// Zoom out
-		if (zoom>-20.0f)
-			zoom -= 0.3f;
-
-	}
+		zoomOut();
 }
 
 void initTiles() {
@@ -159,7 +201,6 @@ void initTiles() {
 				tiles[i][j] = Tile(currX, 0, currZ, 0.1f, 0.1f, 0.7f);
 			currZ -= 1;
 		}
-		tiles[i][7].addCharacter('d');
 		currX += 1.2;	
 	}
 	
@@ -174,9 +215,25 @@ void addView(int index, float rX, float rY, float Z) {
 }
 
 void initViews() {
-	addView(0, 20, 0, -20);
-	addView(1, 10, 90, -20);
-	addView(2, 0, 180, -20);
+	addView(0, 36.000, 179.501, -20.000);
+	addView(1, 32.000, 132.001, -20.000);
+	addView(2, 5.500, 153.001, -11.000);
+	addView(3, 9.000, 154.001, -5.600);
+	addView(4, 35.500, 181.501, -5.600);
+	addView(5, 6.000, 363.001, -5.600);
+	addView(6, 6.000, 363.001, -12.500);
+	addView(7, 7.000, 417.501, -12.500);
+	addView(8, 6.500, 507.001, -12.500);
+	addView(9, 87.500, 490.001, -12.500);
+	addView(10, 21.500, 641.501, -12.500);
+	addView(11, 2.000, 688.001, -12.500);
+	addView(12, 1.500, 815.001, -20.000);
+	addView(13, 2.000, 903.001, -20.000);
+	addView(14, 1.500, 997.001, -20.000);
+	addView(15, -1.500, 1081.001, -20.000);
+	addView(16, 86.500, 1080.001, -20.000);
+	addView(17, 76.500, 900.001, -20.000);
+
 }
 int compare(float a, float b) {
 	if (fabs(a - b) < 1.0)
@@ -187,21 +244,24 @@ int compare(float a, float b) {
 }
 void updateView() {
 	bool done = true;
-	if ((xDir>0&&rotx < views[0][currView])|| (xDir<0 && rotx > views[0][currView])) {
+	if ((xDir>0&&rotx < views[0][currView])|| 
+		(xDir<0 && rotx > views[0][currView])) {
 		if (xDir > 0)
 			rotx += dx;
 		else
 			rotx -= dx;
 		done = false;
 	}
-	if ((yDir>0&&roty < views[1][currView])|| (yDir<0 && roty > views[1][currView])) {
+	if ((yDir>0&&roty < views[1][currView])
+		|| (yDir<0 && roty > views[1][currView])) {
 		if (yDir > 0)
 			roty += dy;
 		else
 			roty -= dy;
 		done = false;
 	}
-	if ((zoomDir>0&&zoom < views[2][currView])|| (zoomDir<0 && zoom > views[2][currView])) {
+	if ((zoomDir>0&&zoom < views[2][currView])
+		|| (zoomDir<0 && zoom > views[2][currView])) {
 		if (zoomDir > 0)
 			zoom += dzoom;
 		else
@@ -224,7 +284,7 @@ void light() {
 }
 void Anim() {
 	glLoadIdentity();
-	gluLookAt(7.0f, 7.0f, 0.0f, 0.0f, 0.0f, 0.01f, 0.0f, 1.0f, 0.0f);
+	gluLookAt(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.01f, 0.0f, 1.0f, 0.0f);
 	//glutPostRedisplay();
 }
 void timerFunc(int v)    

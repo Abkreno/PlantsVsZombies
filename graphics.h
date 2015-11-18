@@ -47,7 +47,7 @@ struct Defender {
 	}
 	void drawGun() {
 		glTranslatef(0, 1, 0);
-		glScalef(0.1, 0.1, 0.4);
+		glScalef(0.1, 0.1, 0.2);
 		gluCylinder(gluNewQuadric(), 1, 1, 2, 30, 30);
 	}
 	void drawBody() {
@@ -57,8 +57,11 @@ struct Defender {
 		glScalef(1, 0.2, 1);
 		gluSphere(gluNewQuadric(), 1.0f, 30, 30);
 		glPopMatrix();
+		glPushMatrix();
+		glScalef(0.9, 1, 0.9);
 		glRotatef(90, 1, 0, 0);
-		gluCylinder(gluNewQuadric(), 1, 1, 2, 30, 30);
+		gluCylinder(gluNewQuadric(), 0.8, 1.5, 2, 30, 30);
+		glPopMatrix();
 	}
 	void draw(float HP) {
 		glPushMatrix();
@@ -85,29 +88,38 @@ struct ResourceGatherer {
 		this->dt = 0.0f;
 	}
 	void updateRotateAng() {
-		if (dt >= 2.0f) {
-			dt = 0.0f;
-			rotAng += 10.0f;
-		}
-		else {
-			dt += 1.7f;
-		}
+		rotAng += 10.0f;
 	}
-	void draw(float alpha) {
+	void drawZibber() {
 		glPushMatrix();
+		glTranslatef(0.0f, 0.1f, 0.0f);
+		glScalef(0.5, 0.5, 0.5);
+		float height = 0.0f;
+		for (int i = 0; i < 270; i++) {
+			glPushMatrix();
+			glTranslatef(0.0f, height, 0.0f);
+			glRotatef(-7 * i, 0, 1, 0);
+			glTranslatef(0.1, 0, 0);
+			glutSolidSphere(0.08, 30, 30);
+			height += 0.009;
+			glPopMatrix();
+		}
+		glPopMatrix();
+	}
+	void draw(float HP) {
+		glPushMatrix();
+		glTranslatef(0, -0.05, 0);
 		glRotatef(rotAng, 0.0f, 1.0f, 0.0f);
 		if (!paused)
 			updateRotateAng();
-		glPushMatrix();
-		glColor4f(0.7, 0.1, 0.1,alpha);
-		glRotatef(-90, 1.0f, 0.0f, 0.0f);
-		gluCylinder(gluNewQuadric(), 0.1f, 0.1f, 1.3f, 11, 11);
-		glPopMatrix();
+		glColor3f(0.7+HP, 0.1 + HP, 0.1 + HP);
 		
+		drawZibber();
+
 		glPushMatrix();
-		glTranslatef(0.0f, 1.5f, 0.0f);
+		glTranslatef(0.0f, 1.2f, 0.0f);
 		glScalef(0.2f, 0.2f, 0.2f);
-		glColor4f(0.7, 0.1, 0.1, alpha);
+		glColor3f(0.7 + HP, 0.1 + HP, 0.1 + HP);
 		glutSolidIcosahedron();
 		glPopMatrix();
 		
@@ -137,6 +149,8 @@ struct Tile {
 		this->resourceG = ResourceGatherer(x, y, z);
 	}
 	void addCharacter(char c) {
+		if (occupied)
+			return;
 		character = c;
 		characterHP = 0;
 		occupied = true;
@@ -178,7 +192,7 @@ struct Tile {
 	}
 }tiles[gridRows][gridCols];
 struct Monster {
-	float x, y, z,r,g,HP,b,dz,dt;
+	float x, y, z,r,g,HP,b,dz,dt,rotAng;
 	bool isDead,stop;
 	Monster::Monster() {}
 	Monster::Monster(float x, float y, float z,float r,float g,float b) {
@@ -191,6 +205,7 @@ struct Monster {
 		this->dt = 0;
 		this->dz = 0;
 		this->HP = 1;
+		this->rotAng = 0;
 		this->isDead = true;
 		this->stop = false;
 	}
@@ -201,20 +216,24 @@ struct Monster {
 		HP = 0;
 	}
 	void update() {
-		dz-= 0.0025;
+		dz-= 0.0045;
 	}
 	void decreaseHP() {
 		HP += 0.1;
 		if (HP >= 0.3)
 			isDead = true;
 	}
-	void drawWheel(float x, float z) {
+	void drawWheel(float x, float z,float diskZ) {
 		glPushMatrix();	
 		
 		glRotatef(90, 0, 1, 0);
 		glScalef(0.15, 0.15, 0.15);
 		glTranslatef(x, -3.0f, z);
 		gluCylinder(gluNewQuadric(), 1, 1, 1, 30, 30);
+		glPushMatrix();
+		glTranslatef(0, 0, diskZ);
+		gluDisk(gluNewQuadric(), 0, 1, 30, 30);
+		glPopMatrix();
 		glPopMatrix();
 	}
 
@@ -227,21 +246,29 @@ struct Monster {
 
 		glPopMatrix();
 	}
+	void drawTop() {
+		glPushMatrix();
+		glTranslatef(0, 0.5, 0);
+		glScalef(0.2, 0.3, 0.2);
+		glutSolidDodecahedron();
+		glPopMatrix();
+	}
 	void draw() {
 		glPushMatrix();
 		if(!paused&&!stop)
 			update();
 		glColor3f(r+HP, g+HP, b+HP);
 		glTranslatef(x, y+0.6, z+dz);
-		glScalef(1, 1, 1);
+		glScalef(0.9, 1, 1);
 		glutSolidCube(1);
-		drawWheel(1.8, 3.2);
-		drawWheel(-2.0, 3.2);
-		drawWheel(-2.0, -4.2);
-		drawWheel(1.8, -4.2);
+		drawTop();
 		drawCone(1.6f);
 		drawCone(0);
 		drawCone(-1.6f);
+		drawWheel(1.8, 3.2,1);
+		drawWheel(-2.0, 3.2,1);
+		drawWheel(-2.0, -4.2,0);
+		drawWheel(1.8, -4.2,0);
 		glPopMatrix();
 	}
 };
