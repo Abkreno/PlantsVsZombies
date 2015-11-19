@@ -1,6 +1,5 @@
 const int MAXMONSTERS = 10;
 const float HouseZ = -5.0f;
-const int gridRows = 5, gridCols = 9;
 bool paused = false;
 bool laneDestroyed[gridRows];
 struct Defender {
@@ -13,7 +12,7 @@ struct Defender {
 		this->x = x;
 		this->y = y;
 		this->z = z;
-		this->dz = 300;
+		this->dz = 0;
 		this->dt = 0;
 		this->ballVanished = false;
 		this->enemyExists = false;
@@ -21,8 +20,8 @@ struct Defender {
 
 	void updateBoltZ() {
 		dz += dz<=200 ?0.2:0;
-		dt += dt<=500?10:0;
-		if (dt > 500 && enemyExists) {
+		dt += dt<=50?1:0;
+		if (dt > 50 && enemyExists) {
 			dt = 0;
 			dz = 0.0f;
 			ballVanished = false;
@@ -67,7 +66,7 @@ struct Defender {
 		glPushMatrix();
 		glPushMatrix();
 		drawBolt();
-		glColor3f(0.7+HP, 0.1+HP, 0.1+HP);
+		glColor3f(0.7-HP, 0.1-HP, 0.1-HP);
 		drawGun();
 		glPopMatrix();
 		glPushMatrix();
@@ -95,27 +94,33 @@ struct ResourceGatherer {
 		glTranslatef(0.0f, 0.1f, 0.0f);
 		glScalef(0.5, 0.5, 0.5);
 		float height = 0.0f;
-		for (int i = 0; i < 270; i++) {
+		for (int i = 0; i < 100; i++) {
 			glPushMatrix();
 			glTranslatef(0.0f, height, 0.0f);
 			glRotatef(-7 * i, 0, 1, 0);
 			glTranslatef(0.1, 0, 0);
 			glutSolidSphere(0.08, 30, 30);
-			height += 0.009;
+			height += 0.019;
 			glPopMatrix();
 		}
 		glPopMatrix();
 	}
 	void updateMoney() {
-
+		dt += 0.01;
+		if (dt >= 1) {
+			dt = 0;
+			money += 20;
+		}
 	}
 	void draw(float HP) {
 		glPushMatrix();
 		glTranslatef(0, -0.05, 0);
 		glRotatef(rotAng, 0.0f, 1.0f, 0.0f);
-		if (!paused)
+		if (!paused) {
 			updateRotateAng();
-		glColor3f(0.7+HP, 0.1 + HP, 0.1 + HP);
+			updateMoney();
+		}
+		glColor3f(0.7-HP, 0.1 - HP, 0.1- HP);
 		
 		drawZibber();
 
@@ -152,8 +157,9 @@ struct Tile {
 		this->resourceG = ResourceGatherer(x, y, z);
 	}
 	void addCharacter(char c) {
-		if (occupied)
+		if (occupied||costs[c - 'a']>money)
 			return;
+		money -= costs[c - 'a'];
 		character = c;
 		characterHP = 0;
 		occupied = true;
@@ -165,7 +171,7 @@ struct Tile {
 	}
 	void decreaseHP() {
 		characterHP += 0.1;
-		if (characterHP > 0.3)
+		if (characterHP > 0.4)
 			destroyCharacter();
 	}
 	void drawCharacter() {
@@ -175,6 +181,14 @@ struct Tile {
 		else if (character == 'r' || character == 'R') {
 			resourceG.draw(characterHP);
 		}
+	}
+	void drawDestroyed() {
+		glPushMatrix();
+		glTranslatef(x, y, z);
+		glColor3f(r-0.4, g-0.2, b-0.5);
+		glScalef(0.9, 0.05f, 0.9);
+		glutSolidCube(1);
+		glPopMatrix();
 	}
 	void draw() {
 		glPushMatrix();
@@ -215,7 +229,7 @@ struct Monster {
 	void start() {
 		isDead = false;
 		dz = 0;
-		dt = 0;
+		dt = 10;
 		HP = 0;
 	}
 	void update() {
@@ -223,7 +237,7 @@ struct Monster {
 	}
 	void decreaseHP() {
 		HP += 0.1;
-		if (HP >= 0.3)
+		if (HP >= 0.2)
 			isDead = true;
 	}
 	void drawWheel(float x, float z,float diskZ) {
@@ -260,7 +274,7 @@ struct Monster {
 		glPushMatrix();
 		if(!paused&&!stop)
 			update();
-		glColor3f(r+HP, g+HP, b+HP);
+		glColor3f(r-HP, g-HP, b-HP);
 		glTranslatef(x, y+0.6, z+dz);
 		glScalef(0.9, 1, 1);
 		glutSolidCube(1);
@@ -296,11 +310,15 @@ struct MonsterFactory {
 			if (monsters[i].isDead) {
 				monsters[i].start();
 				hasMonster = true;
+				numOfMonsters++;
+				totalMonsters++;
 				return;
 			}
 		}
 	}
 	void drawMonsters() {
+		if (game_over)
+			return;
 		glPushMatrix();
 		for (int i = 0; i < MAXMONSTERS; i++)
 			if(!monsters[i].isDead)
@@ -314,6 +332,7 @@ bool intersects(float z1, float z2) {
 		return true;
 	return false;
 }
+void incrementScore();
 void detectBoltIntersections() {
 	for (int i = 0; i < gridRows; i++) {
 		if (laneDestroyed[i])
@@ -329,6 +348,11 @@ void detectBoltIntersections() {
 							tiles[i][j].defender.z + tiles[i][j].defender.dz)) {
 							tiles[i][j].defender.ballVanished = true;
 							monsterFactories[i].monsters[k].decreaseHP();
+							if (monsterFactories[i].monsters[k].isDead) {
+								monsterFactories[i].numOfMonsters--;
+								totalMonsters--;
+								incrementScore();
+							}
 							break;
 						}
 					}
@@ -342,6 +366,7 @@ void detectBoltIntersections() {
 		}
 	}
 }
+
 void detectMonstersIntersections() {
 	for (int i = 0; i < gridRows; i++) {
 		if (laneDestroyed[i])
@@ -351,8 +376,17 @@ void detectMonstersIntersections() {
 				continue;
 			monsterFactories[i].monsters[j].stop = false;
 			if (intersects(monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz, HouseZ)) {
-				monsterFactories[i].monsters[j].isDead = true;
 				laneDestroyed[i] = true;
+				for (int k = 0;k < MAXMONSTERS; k++) {
+					if (monsterFactories[i].monsters[k].isDead)
+						continue;
+					monsterFactories[i].monsters[k].isDead = true;
+					monsterFactories[i].numOfMonsters--;
+					totalMonsters--;
+				}
+				destroyed_lanes++;
+				if (destroyed_lanes == 3)
+					game_over = true;
 				break;
 			}
 			for (int k = 0; k < gridCols; k++) {
@@ -360,7 +394,7 @@ void detectMonstersIntersections() {
 					monsterFactories[i].monsters[j].z + monsterFactories[i].monsters[j].dz)) {
 					monsterFactories[i].monsters[j].stop = true;
 					monsterFactories[i].monsters[j].dt++;
-					if (monsterFactories[i].monsters[j].dt >= 40) {
+					if (monsterFactories[i].monsters[j].dt >= 10) {
 						tiles[i][k].decreaseHP();
 						monsterFactories[i].monsters[j].dt = 0;
 					}

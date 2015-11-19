@@ -1,6 +1,7 @@
 #include <string>
 #include <glut.h>
 #include <stdio.h>
+#include <stdlib.h>    
 #include <math.h>
 #include <variables.h>
 #include <graphics.h>
@@ -30,8 +31,12 @@ void drawGrid() {
 	glPushMatrix();
 	glTranslatef(0.6, 0, 0);
 	for (int i = 0; i < gridRows; i++) {
-		if (laneDestroyed[i])
+		if (laneDestroyed[i]) {
+			for (int j = 0; j < gridCols; j++) {
+				tiles[i][j].drawDestroyed();
+			}
 			continue;
+		}
 		for (int j = 0; j < gridCols; j++) {
 			monsterFactories[i].drawMonsters();
 			tiles[i][j].draw();
@@ -55,7 +60,23 @@ void drawText(float x,float y,void* font ) {
 	do glutBitmapCharacter(font	, *p); while (*(++p));
 	glPopMatrix();
 }
-
+void drawPrices() {
+	float y = 0.95;
+	sprintf(temp_buffer, " Character      key        cost");
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_18);
+	sprintf(temp_buffer, " Defender                  d              %d$", defender_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	sprintf(temp_buffer, " Resource Gatherer     r              0%d$", resource_gatherer_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	sprintf(temp_buffer, " Warrior                     w             %d$", warrior_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	sprintf(temp_buffer, " Shield                       s             %d$", sheild_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+}
 void drawTexture() {
 	glColor3f(0, 0, 0);
 	//TEXT
@@ -67,25 +88,20 @@ void drawTexture() {
 	glLoadIdentity();
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST); // also disable the depth test so renders on top
+	if (show_prices) {
+		drawPrices();
+	}
+	else {
+		sprintf(temp_buffer, "Press 'space' to show prices");
+		drawText(-0.98, 0.97, GLUT_BITMAP_8_BY_13);
+	}
 	
-	float y = 0.95;
-	sprintf(temp_buffer, " Character      key        cost");
-	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_18);
-	sprintf(temp_buffer, " Defender                  d              %d$", defender_cost);
-	y -= 0.08;
-	drawText(-0.87, y,GLUT_BITMAP_HELVETICA_12);
-	sprintf(temp_buffer, " Resource Gatherer     r              0%d$", resource_gatherer_cost);
-	y -= 0.08;
-	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
-	sprintf(temp_buffer, " Warrior                     w             %d$", warrior_cost);
-	y -= 0.08;
-	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
-	sprintf(temp_buffer, " Shield                       s             %d$", sheild_cost);
-	y -= 0.08;
-	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
-	
-	sprintf(temp_buffer, "Money = %d", money);
-	drawText(0.6, 0.9, GLUT_BITMAP_8_BY_13);
+	sprintf(temp_buffer, "Resources = %d", money);
+	drawText(0.52, 0.95, GLUT_BITMAP_8_BY_13);
+
+	sprintf(temp_buffer, "Zombies = %d / %d", score, max_score);
+	drawText(0.52, 0.88, GLUT_BITMAP_8_BY_13);
+
 
 	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
 	glEnable(GL_LIGHTING);
@@ -95,18 +111,47 @@ void drawTexture() {
 	glPopMatrix();
 
 }
+void drawGameOver() {
+	glColor3f(0, 0, 0);
+	//TEXT
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix(); // save
+	glLoadIdentity();// and clear
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST); // also disable the depth test so renders on top
+	if (score >= max_score) {
+		sprintf(temp_buffer, "You have killed 50 Zombies", score, max_score);
+		drawText(-0.2, 0.7, GLUT_BITMAP_HELVETICA_18);
+		sprintf(temp_buffer, "Congratulations You Won!", score, max_score);
+		drawText(0, 0.5, GLUT_BITMAP_HELVETICA_18);
+	}
+	else if (destroyed_lanes >= 3) {
+		sprintf(temp_buffer, "3 Zombies Entered Your House", score, max_score);
+		drawText(-0.2, 0.7, GLUT_BITMAP_HELVETICA_18);
+		sprintf(temp_buffer, "You Lost!", score, max_score);
+		drawText(0, 0.5, GLUT_BITMAP_HELVETICA_18);
+	}
+	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
+	glEnable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix(); // revert back to the matrix I had before.
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+}
+
 void Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
-
-	
-
 	glPushMatrix();
 	glTranslatef(0, 0, zoom);
 	glRotatef(rotx, 1, 0, 0);
 	glRotatef(roty, 0, 1, 0);
 	glRotatef(rotz, 0, 0, 1);
-	if (!paused) {
+	if (!paused&&!game_over) {
 		detectBoltIntersections();
 		detectMonstersIntersections();
 	}
@@ -117,9 +162,10 @@ void Display(void) {
 	glScalef(gridRows, 1.0f, gridCols);
 	glutSolidCube(2);
 	glPopMatrix();
-
-	drawTexture();
-
+	if (game_over)
+		drawGameOver();
+	else
+		drawTexture();
 	glFlush();
 }
 
@@ -140,7 +186,7 @@ void Motion(int x, int y)
 
 void Mouse(int b, int s, int x, int y)
 {
-	if (view || paused) {
+	if (view || paused || game_over) {
 		return;
 	}
 	lastx = x;
@@ -186,7 +232,7 @@ void zoomOut() {
 		zoom -= 0.3f;
 }
 void handleCharacterInsertion(unsigned char key) {
-	if (key == ESC_KEY){
+	if (key == ESC_KEY||game_over){
 		currState = SELECT_ROW;
 		if (selected_row < 5 && selected_row>=0
 			&& selected_col < 9 && selected_col>=0)
@@ -196,6 +242,8 @@ void handleCharacterInsertion(unsigned char key) {
 	if (currState == SELECT_ROW) {
 		if (key > '0' && key <= '5') {
 			selected_row = (key - '0') - 1;
+			if (laneDestroyed[selected_row])
+				return;
 			selected_col = 8;
 			tiles[selected_row][selected_col].highlighted = true;
 			currState = SELECT_COL;
@@ -222,12 +270,9 @@ void handleCharacterInsertion(unsigned char key) {
 }
 int counterrr = 0;
 void key(unsigned char key, int x, int y) {
-	if (key == 'k') {
-		printf("addView(%d, %0.3f, %0.3f, %0.3f);\n", counterrr++, rotx, roty, zoom);
-		
-	}
-	if (key == 'f')
-		monsterFactories[0].addMonster();
+	
+	if (key == 32)
+		show_prices = !show_prices;
 	if (key == 'p' || key == 'P')
 		paused = !paused;
 	if (paused) 
@@ -274,10 +319,10 @@ void addView(int index, float rX, float rY, float Z) {
 void initViews() {
 	addView(0, 36.000, 179.501, -20.000);
 	addView(1, 32.000, 132.001, -20.000);
-	addView(2, 5.500, 153.001, -11.000);
-	addView(3, 9.000, 154.001, -5.600);
-	addView(4, 35.500, 181.501, -5.600);
-	addView(5, 6.000, 363.001, -5.600);
+	addView(2, 5.500, 153.001, -15.000);
+	addView(3, 9.000, 154.001, -8.600);
+	addView(4, 35.500, 181.501, -8.600);
+	addView(5, 6.000, 363.001, -8.600);
 	addView(6, 6.000, 363.001, -12.500);
 	addView(7, 7.000, 417.501, -12.500);
 	addView(8, 6.500, 507.001, -12.500);
@@ -344,19 +389,48 @@ void Anim() {
 	gluLookAt(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.01f, 0.0f, 1.0f, 0.0f);
 	//glutPostRedisplay();
 }
+void generateMonsters() {
+	int y,x;
+	if (totalMonsters >= level)
+		return;
+	for (int i = 0; i < gridRows; i++) {
+		if (laneDestroyed[i] || monsterFactories[i].numOfMonsters >= level)
+			continue;
+		x = rand() % mod;
+		y = rand() % mod;
+		if (x == y||time==1000) {
+			monsterFactories[i].addMonster();
+			time = 0;
+		}
+		time++;
+	}
+}
 void timerFunc(int v)    
 {
 
 	if (view) {
 		updateView();
 	}
+	if(!game_over)
+		generateMonsters();
 	glutPostRedisplay();
 	glutTimerFunc(30, timerFunc, 0);
 }
+void incrementScore() {
+	if (score == max_score)
+		return;
+	score++;
+	if (score == max_score)
+		game_over = true;
+	else if (score&&score % 10 == 0){
+		mod -= 10;
+		level++;
+	}
+}
 void main(int argc, char** argv) {
-	
 	initTiles();
 	initViews();
+	initCosts();
 	glutInit(&argc, argv);
 
 	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
