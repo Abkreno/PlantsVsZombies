@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>    
 #include <math.h>
-#include <variables.h>
+
 #include <graphics.h>
 
 using namespace std;
@@ -67,11 +67,11 @@ void drawPrices() {
 	sprintf(temp_buffer, " Defender                  d              %d$", defender_cost);
 	y -= 0.08;
 	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
-	sprintf(temp_buffer, " Resource Gatherer     r              0%d$", resource_gatherer_cost);
+	sprintf(temp_buffer, " Resource Gatherer     r               %d$", resource_gatherer_cost);
 	y -= 0.08;
-	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
-	sprintf(temp_buffer, " Warrior                     w             %d$", warrior_cost);
-	y -= 0.08;
+	//drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	//sprintf(temp_buffer, " Warrior                     w             %d$", warrior_cost);
+	//y -= 0.08;
 	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
 	sprintf(temp_buffer, " Shield                       s             %d$", sheild_cost);
 	y -= 0.08;
@@ -123,16 +123,16 @@ void drawGameOver() {
 	glDisable(GL_LIGHTING);
 	glDisable(GL_DEPTH_TEST); // also disable the depth test so renders on top
 	if (score >= max_score) {
-		sprintf(temp_buffer, "You have killed 50 Zombies", score, max_score);
-		drawText(-0.2, 0.7, GLUT_BITMAP_HELVETICA_18);
 		sprintf(temp_buffer, "Congratulations You Won!", score, max_score);
-		drawText(0, 0.5, GLUT_BITMAP_HELVETICA_18);
+		drawText(-0.25, 0.7, GLUT_BITMAP_HELVETICA_18);
+		sprintf(temp_buffer, "You have killed 50 Zombies", score, max_score);
+		drawText(-0.26, 0.5, GLUT_BITMAP_HELVETICA_18);
 	}
 	else if (destroyed_lanes >= 3) {
-		sprintf(temp_buffer, "3 Zombies Entered Your House", score, max_score);
-		drawText(-0.2, 0.7, GLUT_BITMAP_HELVETICA_18);
+		sprintf(temp_buffer, "Zombies Entered Your House", score, max_score);
+		drawText(-0.33, 0.7, GLUT_BITMAP_HELVETICA_18);
 		sprintf(temp_buffer, "You Lost!", score, max_score);
-		drawText(0, 0.5, GLUT_BITMAP_HELVETICA_18);
+		drawText(-0.1, 0.5, GLUT_BITMAP_HELVETICA_18);
 	}
 	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
 	glEnable(GL_LIGHTING);
@@ -261,7 +261,7 @@ void handleCharacterInsertion(unsigned char key) {
 		if (key == 'c') {
 			tiles[selected_row][selected_col].destroyCharacter();
 		}
-		else if (key == 'd'||key=='r'||key=='w') {
+		else if (key == 'd'||key=='r'||key=='s') {
 			tiles[selected_row][selected_col].addCharacter(key);
 		}
 		tiles[selected_row][selected_col].highlighted = false;
@@ -273,12 +273,14 @@ void key(unsigned char key, int x, int y) {
 	
 	if (key == 32)
 		show_prices = !show_prices;
+	if (game_over)
+		return;
 	if (key == 'p' || key == 'P')
 		paused = !paused;
 	if (paused) 
 		return;
 	if (key >= '0'&&key <= '9' || key == 'r' || key == 'd' 
-		|| key == 'w' || key == 'c' || key == ESC_KEY)
+		|| key == 's' || key == 'c' || key == ESC_KEY)
 		handleCharacterInsertion(key);
 	if (key == 'v')
 		switchView();
@@ -398,11 +400,9 @@ void generateMonsters() {
 			continue;
 		x = rand() % mod;
 		y = rand() % mod;
-		if (x == y||time==1000) {
+		if (x == y) {
 			monsterFactories[i].addMonster();
-			time = 0;
 		}
-		time++;
 	}
 }
 void timerFunc(int v)    
@@ -413,6 +413,13 @@ void timerFunc(int v)
 	}
 	if(!game_over)
 		generateMonsters();
+	else {
+		if (time < 100)
+			time++;
+		else
+			view = true;
+
+	}
 	glutPostRedisplay();
 	glutTimerFunc(30, timerFunc, 0);
 }

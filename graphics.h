@@ -1,3 +1,6 @@
+#include <variables.h>
+#include <characters.h>
+
 const int MAXMONSTERS = 10;
 const float HouseZ = -5.0f;
 bool paused = false;
@@ -34,13 +37,13 @@ struct Defender {
 		enemyExists = true;
 	}
 	void drawBolt() {
-		if (!paused)
+		if (!paused&&!game_over)
 			updateBoltZ();
 		glPushMatrix();
 		glColor3f(0.13f, 0.13f, 0.13f);
 		glTranslatef(0.0f, 1.0f, dz);
 		glScalef(0.2, 0.2, 0.6);
-		if (!ballVanished)
+		if (!ballVanished&&!game_over)
 			gluSphere(gluNewQuadric(), 0.3f, 30, 30);
 		glPopMatrix();
 	}
@@ -75,7 +78,24 @@ struct Defender {
 		glPopMatrix();
 	}
 };
-
+struct Shield {
+	float x, y, z, rotAng, dt;
+	Shield::Shield() {}
+	Shield::Shield(float x, float y, float z) {
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->dt = 0.0f;
+	}
+	void draw(float HP) {
+		glPushMatrix();
+		glTranslatef(0.0f, 1.2f, 0.0f);
+		glScalef(1.0f, 1.0f, 0.2f);
+		glColor3f(0.7 + HP, 0.1 + HP, 0.1 + HP);
+		glutSolidIcosahedron();
+		glPopMatrix();
+	}
+};
 struct ResourceGatherer {
 	float x, y, z,rotAng,dt;
 	ResourceGatherer::ResourceGatherer() {}
@@ -141,6 +161,7 @@ struct Tile {
 	char character;
 	Defender defender;
 	ResourceGatherer resourceG;
+	Shield shield;
 	Tile::Tile() {}
 	Tile::Tile(float x, float y, float z, float r, float g, float b) {
 		this->x = x;
@@ -155,6 +176,7 @@ struct Tile {
 		this->characterHP = 0;
 		this->defender = Defender(x,y,z);
 		this->resourceG = ResourceGatherer(x, y, z);
+		this->shield = Shield(x, y, z);
 	}
 	void addCharacter(char c) {
 		if (occupied||costs[c - 'a']>money)
@@ -171,8 +193,13 @@ struct Tile {
 	}
 	void decreaseHP() {
 		characterHP += 0.1;
-		if (characterHP > 0.4)
+		if ((character == 's'&&characterHP > 2)
+			||(character!='s'&&characterHP > 0.4))
 			destroyCharacter();
+	}
+	float minimum(float x, float y) {
+		if (x < y)return x;
+		return y;
 	}
 	void drawCharacter() {
 		if (character == 'd' || character == 'D') {
@@ -180,6 +207,9 @@ struct Tile {
 		}
 		else if (character == 'r' || character == 'R') {
 			resourceG.draw(characterHP);
+		}
+		else if (character == 's' || character == 'S') {
+			shield.draw(characterHP*0.2);
 		}
 	}
 	void drawDestroyed() {
@@ -237,7 +267,7 @@ struct Monster {
 	}
 	void decreaseHP() {
 		HP += 0.1;
-		if (HP >= 0.2)
+		if (HP >= 0.3)
 			isDead = true;
 	}
 	void drawWheel(float x, float z,float diskZ) {
@@ -385,6 +415,7 @@ void detectMonstersIntersections() {
 					totalMonsters--;
 				}
 				destroyed_lanes++;
+				currState = SELECT_ROW;
 				if (destroyed_lanes == 3)
 					game_over = true;
 				break;
