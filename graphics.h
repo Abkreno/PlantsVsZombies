@@ -106,6 +106,9 @@ struct ResourceGatherer {
 		}
 		glPopMatrix();
 	}
+	void updateMoney() {
+
+	}
 	void draw(float HP) {
 		glPushMatrix();
 		glTranslatef(0, -0.05, 0);

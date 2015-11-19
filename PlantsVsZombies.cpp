@@ -1,8 +1,11 @@
+#include <string>
 #include <glut.h>
 #include <stdio.h>
 #include <math.h>
 #include <variables.h>
 #include <graphics.h>
+
+using namespace std;
 
 void drawHouse() {
 	//Roof
@@ -41,15 +44,64 @@ void drawGrid() {
 			}
 		}
 	}
-	
-
 	glPopMatrix();
 }
 
+void drawText(float x,float y,void* font ) {
+	glPushMatrix();
+	glTranslatef(x, y, 0);
+	glRasterPos2f(0, 0); // center of screen. (-1,0) is center left.
+	const char * p = temp_buffer;
+	do glutBitmapCharacter(font	, *p); while (*(++p));
+	glPopMatrix();
+}
+
+void drawTexture() {
+	glColor3f(0, 0, 0);
+	//TEXT
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix(); // save
+	glLoadIdentity();// and clear
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST); // also disable the depth test so renders on top
+	
+	float y = 0.95;
+	sprintf(temp_buffer, " Character      key        cost");
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_18);
+	sprintf(temp_buffer, " Defender                  d              %d$", defender_cost);
+	y -= 0.08;
+	drawText(-0.87, y,GLUT_BITMAP_HELVETICA_12);
+	sprintf(temp_buffer, " Resource Gatherer     r              0%d$", resource_gatherer_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	sprintf(temp_buffer, " Warrior                     w             %d$", warrior_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	sprintf(temp_buffer, " Shield                       s             %d$", sheild_cost);
+	y -= 0.08;
+	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
+	
+	sprintf(temp_buffer, "Money = %d", money);
+	drawText(0.6, 0.9, GLUT_BITMAP_8_BY_13);
+
+	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
+	glEnable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix(); // revert back to the matrix I had before.
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+}
 void Display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
+	
+
+	glPushMatrix();
 	glTranslatef(0, 0, zoom);
 	glRotatef(rotx, 1, 0, 0);
 	glRotatef(roty, 0, 1, 0);
@@ -64,6 +116,10 @@ void Display(void) {
 	glTranslatef(0, -1.02, 0);
 	glScalef(gridRows, 1.0f, gridCols);
 	glutSolidCube(2);
+	glPopMatrix();
+
+	drawTexture();
+
 	glFlush();
 }
 
@@ -168,6 +224,7 @@ int counterrr = 0;
 void key(unsigned char key, int x, int y) {
 	if (key == 'k') {
 		printf("addView(%d, %0.3f, %0.3f, %0.3f);\n", counterrr++, rotx, roty, zoom);
+		
 	}
 	if (key == 'f')
 		monsterFactories[0].addMonster();

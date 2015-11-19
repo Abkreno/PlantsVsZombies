@@ -5,6 +5,7 @@
 #define SELECT_ROW 0
 #define SELECT_COL 1
 #define SELECT_CHR 2
+char temp_buffer[300];
 float eps = 1;
 float zoom = -20.0f;
 float rotx = 30;
@@ -14,6 +15,11 @@ float dx = 0.5;
 float dy = 0.5;
 float dzoom = 0.05;
 float views[3][MAX_NUM_OF_VIEWS];
+const int defender_cost = 200;
+const int resource_gatherer_cost = 50;
+const int warrior_cost = 350;
+const int sheild_cost = 100;
+int money = 300;
 int xDir = 1;
 int yDir = 1;
 int zoomDir = 1;
