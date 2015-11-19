@@ -1,5 +1,4 @@
 #include <variables.h>
-#include <characters.h>
 
 const int MAXMONSTERS = 10;
 const float HouseZ = -5.0f;

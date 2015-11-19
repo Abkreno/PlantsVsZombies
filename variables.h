@@ -48,3 +48,4 @@ bool show_prices = false;
 bool game_over = false;
 int level = 1;
 int time = 0;
+int tipsTime = 0;

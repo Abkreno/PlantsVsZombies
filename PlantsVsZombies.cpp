@@ -77,6 +77,26 @@ void drawPrices() {
 	y -= 0.08;
 	drawText(-0.87, y, GLUT_BITMAP_HELVETICA_12);
 }
+void drawTipsText() {
+	glColor3f(0, 0, 0);
+	//TEXT
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix(); // save
+	glLoadIdentity();// and clear
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST); // also disable the depth test so renders on top
+	sprintf(temp_buffer, "Use mouse to change camera rotation", score, max_score);
+	drawText(-0.45, 0.5, GLUT_BITMAP_HELVETICA_18);
+	glEnable(GL_DEPTH_TEST); // Turn depth testing back on
+	glEnable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix(); // revert back to the matrix I had before.
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
 void drawTexture() {
 	glColor3f(0, 0, 0);
 	//TEXT
@@ -164,8 +184,13 @@ void Display(void) {
 	glPopMatrix();
 	if (game_over)
 		drawGameOver();
-	else
+	else {
+		if (tipsTime < 100) {
+			drawTipsText();
+			tipsTime++;
+		}
 		drawTexture();
+	}
 	glFlush();
 }
 
@@ -405,14 +430,18 @@ void generateMonsters() {
 		}
 	}
 }
+
 void timerFunc(int v)    
 {
 
 	if (view) {
 		updateView();
 	}
-	if(!game_over)
+	if (!game_over) {
 		generateMonsters();
+
+
+		}
 	else {
 		if (time < 100)
 			time++;
