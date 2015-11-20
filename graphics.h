@@ -88,9 +88,9 @@ struct Shield {
 	}
 	void draw(float HP) {
 		glPushMatrix();
-		glTranslatef(0.0f, 1.2f, 0.0f);
+		glTranslatef(0.0f, 0.9f, 0.0f);
 		glScalef(1.0f, 1.0f, 0.2f);
-		glColor3f(0.7 + HP, 0.1 + HP, 0.1 + HP);
+		glColor3f(0.2 + HP, 0.2 + HP, 0.2 + HP);
 		glutSolidIcosahedron();
 		glPopMatrix();
 	}
@@ -208,7 +208,7 @@ struct Tile {
 			resourceG.draw(characterHP);
 		}
 		else if (character == 's' || character == 'S') {
-			shield.draw(characterHP*0.2);
+			shield.draw(characterHP*0.3);
 		}
 	}
 	void drawDestroyed() {
@@ -226,7 +226,7 @@ struct Tile {
 			drawCharacter();
 		}
 		if (highlighted) {
-			glColor4f(r, g, b,0.5);
+			glColor4f(r-0.3, g-0.3, b-0.3,0.2);
 		}
 		else {
 			glColor4f(r, g, b,1.0);
@@ -381,6 +381,7 @@ void detectBoltIntersections() {
 								monsterFactories[i].numOfMonsters--;
 								totalMonsters--;
 								incrementScore();
+								money += 10;
 							}
 							break;
 						}
@@ -413,8 +414,11 @@ void detectMonstersIntersections() {
 					monsterFactories[i].numOfMonsters--;
 					totalMonsters--;
 				}
-				destroyed_lanes++;
-				currState = SELECT_ROW;
+				destroyed_lanes++; 
+				if (selected_row == i) {
+					tiles[selected_row][selected_col].highlighted = false;
+					currState = SELECT_ROW;
+				}
 				if (destroyed_lanes == 3)
 					game_over = true;
 				break;

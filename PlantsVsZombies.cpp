@@ -196,7 +196,7 @@ void Display(void) {
 
 void Motion(int x, int y)
 {
-	if (view)
+	if (view||game_over)
 		return;
 	int diffx = x - lastx;
 	int diffy = y - lasty;
